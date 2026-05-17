@@ -243,6 +243,8 @@ const onFilter = () => {
 
 
 async function ban(id: number) {
+    loading.value = true
+
     let duration = 0;
 
     if (bannd_time.value !== null) {
@@ -267,10 +269,37 @@ async function ban(id: number) {
 
         }
 
-
-
         add_dialog_visible.value = false
     }
+
+    fetchlist_paging(page.value, rows.value, order.value, getActiveFilter())
+    loading.value = false
+
+
+}
+
+async function unban(id: number) {
+    try {
+        loading.value = true
+        const response = await axios.delete('/api/' + id)
+        if (response.status === 200) {
+            if (response.data['status'] === 'Unbanned') {
+
+                toast.add({ severity: 'custom', summary: 'ID: ' + id, detail: "解除封禁成功", life: 3000, styleClass: success_styleClass })
+
+            }
+        } else if (response.status === 409) {
+            toast.add({ severity: 'custom', summary: 'ID: ' + id + "解除封禁失败", detail: "原因：" + response.data, life: 3000, styleClass: error_styleClass })
+
+        }
+    } catch (e) {
+        toast.add({ severity: 'custom', summary: 'ID: ' + id + "解除封禁失败", detail: "原因：" + e, life: 3000, styleClass: error_styleClass })
+
+    }
+
+    fetchlist_paging(page.value, rows.value, order.value, getActiveFilter())
+    loading.value = false
+
 
 
 }
@@ -337,7 +366,12 @@ onMounted(() => {
 
                 <Tag :value="formatOperatorName(data.operator)"
                     :severity="getOperatorSeverity(data.operator_permission)" />
-
+            </template>
+        </Column>
+        <Column field="name" header="删除">
+            <template #body="{ data }">
+                <Button icon="pi pi-trash" aria-label="Del" @click="unban(data.id)"
+                    :disabled="data.permission === Permission.SuperAdmin" />
             </template>
         </Column>
     </DataTable>

@@ -133,8 +133,7 @@ onBeforeMount(() => {
         </Column>
         <Column field="name" header="删除">
             <template #body="{ data }">
-
-                <Button icon="pi pi-trash" aria-label="Save" @click="del_manager(data.name)"
+                <Button icon="pi pi-trash" aria-label="Del" @click="del_manager(data.name)"
                     :disabled="data.permission === Permission.SuperAdmin" />
             </template>
         </Column>
