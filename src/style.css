@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+/* 2. 引入 PrimeVue 的 Tailwind 主题桥接插件
+   这让你可以使用类似 bg-primary-500 这样的语义化类名 */
+@import "tailwindcss-primeui";
+
+/* 3. (可选) 配置暗黑模式选择器
+   确保 Tailwind 的 dark: 变体与 PrimeVue 的暗黑模式切换机制同步 */
+@custom-variant dark (&:where(.p-dark, .p-dark *));
+
+
+@import 'primeicons/primeicons.css'
