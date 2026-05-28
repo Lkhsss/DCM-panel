@@ -17,6 +17,7 @@ import { useToast } from 'primevue/usetoast'
 import FloatLabel from 'primevue/floatlabel';
 import SelectButton from 'primevue/selectbutton';
 import DatePicker from 'primevue/datepicker';
+import OverlayBadge from 'primevue/overlaybadge';
 
 
 
@@ -26,6 +27,8 @@ type BannedItem = {
     duration: number
     operator: string
     operator_permission: Permission
+    nick: string
+    qqLevel: number | null
 }
 
 enum Order {
@@ -40,6 +43,7 @@ const first = ref(0);
 const order = ref(Order.Desc)
 const page = ref(0)
 const totalpage = ref(0)
+let infoRequestId = 0
 
 const filters = ref({ global: { value: null, matchMode: FilterMatchMode.CONTAINS }, })
 
@@ -85,6 +89,24 @@ async function fetchOperatorPermissions(names: string[]) {
 
     const entries = await Promise.all(requests)
     return new Map<string, Permission>(entries)
+}
+
+async function fetchAccountInfo(ids: number[]) {
+    const uniqueIds = Array.from(new Set(ids.filter((id) => Number.isFinite(id) && id > 0)))
+    if (!uniqueIds.length) return new Map<number, { nick: string; qqLevel: number | null }>()
+
+    const requests = uniqueIds.map(async (id) => {
+        try {
+            const response = await axios.get('/api/info', { params: { id } })
+            const data = response.data ?? {}
+            return [id, { nick: String(data.nick ?? '-'), qqLevel: Number.isFinite(data.qqLevel) ? Number(data.qqLevel) : null }] as const
+        } catch {
+            return [id, { nick: '-', qqLevel: null }] as const
+        }
+    })
+
+    const entries = await Promise.all(requests)
+    return new Map<number, { nick: string; qqLevel: number | null }>(entries)
 }
 
 function formatOperatorName(value: string) {
@@ -177,6 +199,8 @@ async function fetchlist_paging(page: number, size: number, order: Order, filter
             duration: Number(item.duration),
             operator: String(item.operator ?? ''),
             operator_permission: Permission.None,
+            nick: '-',
+            qqLevel: null,
         }))
 
 
@@ -184,21 +208,33 @@ async function fetchlist_paging(page: number, size: number, order: Order, filter
             baseItems.map((item) => formatOperatorName(item.operator))
         )
 
-
         datalist.value = baseItems.map((item) => ({
             ...item,
             operator_permission:
                 permissionMap.get(formatOperatorName(item.operator)) ?? Permission.None,
+            nick: '-',
+            qqLevel: null,
         }))
+
+        const currentRequestId = ++infoRequestId
+        fetchAccountInfo(baseItems.map((item) => item.id))
+            .then((infoMap) => {
+                if (currentRequestId !== infoRequestId) return
+                datalist.value = datalist.value.map((item) => ({
+                    ...item,
+                    nick: infoMap.get(item.id)?.nick ?? '-',
+                    qqLevel: infoMap.get(item.id)?.qqLevel ?? null,
+                }))
+            })
+            .catch(() => {
+                // Ignore per-row info failures to keep the page responsive.
+            })
 
         totalRecords.value = await fetch_list_len(filter)
 
     } catch (e) {
         console.error(e);
         toast.add({ severity: 'custom', summary: '获取数据失败 ', detail: "原因：" + e, life: 3000, styleClass: error_styleClass })
-
-
-
 
     }
     loading.value = false;
@@ -210,7 +246,7 @@ async function fetch_list_len(filter: string | null) {
     if (filter !== null) {
         p.filter = filter
     }
-    const response = await axios.get('/api/list/count', { params: p })
+    const response = await axios.get('/api/metrics/banned', { params: p })
     const len = response.data ?? 0;
     return len
 }
@@ -312,6 +348,8 @@ onBeforeMount(async () => {
         duration: 0,
         operator: '',
         operator_permission: Permission.None,
+        nick: '-',
+        qqLevel: null,
     }))
 
     totalRecords.value = await fetch_list_len(null) ?? 0
@@ -349,7 +387,14 @@ onMounted(() => {
         <template #paginatorend>
             <Button type="button" icon="pi pi-plus" text @click="add_dialog_visible = true" />
         </template>
-        <Column field="id" header="ID" headerStyle="width: 15rem">
+        <Column field="id" header="ID" headerStyle="width: 10rem">
+        </Column>
+        <Column field="nick" header="昵称" headerStyle="width: 10rem">
+            <template #body="{ data }">
+                <OverlayBadge :value="data.qqLevel" :severity="data.qqLevel ? 'success' : 'secondary'">
+                    <span>{{ data.nick || '-' }}</span>
+                </OverlayBadge>
+            </template>
         </Column>
         <Column field="time" header="封禁时间">
             <template #body="{ data }">

@@ -11,11 +11,14 @@ import Dialog from 'primevue/dialog';
 import { useToast } from 'primevue/usetoast'
 import FloatLabel from 'primevue/floatlabel';
 import Password from 'primevue/password';
+import OverlayBadge from 'primevue/overlaybadge';
 
 type Manager = {
     name: string,
     password: string,
     permission: Permission
+    nick: string
+    qqLevel: number | null
 }
 const toast = useToast()
 
@@ -24,6 +27,29 @@ const rows = ref(10)
 const loading = ref(true)
 const add_dialog_visible = ref(false)
 const new_manager = ref()
+let infoRequestId = 0
+
+function isNumericId(value: string) {
+    return /^\d+$/.test(value)
+}
+
+async function fetchAccountInfo(ids: number[]) {
+    const uniqueIds = Array.from(new Set(ids.filter((id) => Number.isFinite(id) && id > 0)))
+    if (!uniqueIds.length) return new Map<number, { nick: string; qqLevel: number | null }>()
+
+    const requests = uniqueIds.map(async (id) => {
+        try {
+            const response = await axios.get('/api/info', { params: { id } })
+            const data = response.data ?? {}
+            return [id, { nick: String(data.nick ?? '-'), qqLevel: Number.isFinite(data.qqLevel) ? Number(data.qqLevel) : null }] as const
+        } catch {
+            return [id, { nick: '-', qqLevel: null }] as const
+        }
+    })
+
+    const entries = await Promise.all(requests)
+    return new Map<number, { nick: string; qqLevel: number | null }>(entries)
+}
 
 async function fetch_data() {
     try {
@@ -33,9 +59,35 @@ async function fetch_data() {
             name: String(item.name),
             password: String(item.password),
             permission: item.permission,
+            nick: '-',
+            qqLevel: null,
         }))
 
         datalist.value = baseItems;
+
+        const numericIds = baseItems
+            .filter((item) => isNumericId(item.name))
+            .map((item) => Number(item.name))
+
+        if (numericIds.length) {
+            const currentRequestId = ++infoRequestId
+            fetchAccountInfo(numericIds)
+                .then((infoMap) => {
+                    if (currentRequestId !== infoRequestId) return
+                    datalist.value = datalist.value.map((item) => {
+                        if (!isNumericId(item.name)) return item
+                        const info = infoMap.get(Number(item.name))
+                        return {
+                            ...item,
+                            nick: info?.nick ?? '-',
+                            qqLevel: info?.qqLevel ?? null,
+                        }
+                    })
+                })
+                .catch(() => {
+                    // Ignore per-row info failures to keep the page responsive.
+                })
+        }
     }
     catch (e) {
         console.error(e);
@@ -57,6 +109,8 @@ async function refresh_manager_password(id: string) {
                 name: String(updated.name),
                 password: String(updated.password),
                 permission: updated.permission,
+                nick: datalist.value[index]?.nick ?? '-',
+                qqLevel: datalist.value[index]?.qqLevel ?? null,
             }
         }
         toast.add({ severity: 'custom', summary: '密码重置成功', detail: "用户：" + updated.name, life: 3000, styleClass: success_styleClass })
@@ -121,7 +175,15 @@ onBeforeMount(() => {
 
         <Column field="name" header=" 管理员ID">
         </Column>
-        <Column field="password" header="密码" style="width: 50%">
+        <Column field="nick" header="姓名">
+            <template #body="{ data }">
+                <OverlayBadge :value="data.qqLevel" :severity="data.qqLevel ? 'success' : 'secondary'"
+                    :pt="{ pcBadge: { class: 'nick-level-badge' } }">
+                    <span>{{ data.nick || '-' }}</span>
+                </OverlayBadge>
+            </template>
+        </Column>
+        <Column field="password" header="密码" style="width: 40%">
             <template #body="{ data }">
                 <Password v-model="data.password" toggleMask :feedback="false" size="large" fluid />
             </template>
@@ -155,3 +217,16 @@ onBeforeMount(() => {
     </DataTable>
 
 </template>
+
+<style scoped>
+.nick-level-badge {
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+}
+</style>
