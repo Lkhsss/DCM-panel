@@ -1,12 +1,81 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* 2. 引入 PrimeVue 的 Tailwind 主题桥接插件
    这让你可以使用类似 bg-primary-500 这样的语义化类名 */
-@import "tailwindcss-primeui";
+@import 'tailwindcss-primeui';
 
 /* 3. (可选) 配置暗黑模式选择器
    确保 Tailwind 的 dark: 变体与 PrimeVue 的暗黑模式切换机制同步 */
 @custom-variant dark (&:where(.p-dark, .p-dark *));
 
+@import 'primeicons/primeicons.css';
 
-@import 'primeicons/primeicons.css'
+/* 4. 移动端全局优化 */
+*,
+*::before,
+*::after {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+  /* 刘海屏适配 */
+  padding-top: max(0px, env(safe-area-inset-top));
+  padding-left: max(0px, env(safe-area-inset-left));
+  padding-right: max(0px, env(safe-area-inset-right));
+  padding-bottom: max(0px, env(safe-area-inset-bottom));
+}
+
+body {
+  /* 防止长按菜单 */
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+/* 防止 iOS 输入框自动缩放 */
+@media (max-width: 640px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* 小屏幕优化 */
+  button {
+    min-height: 44px; /* iOS 推荐的最小点击区域 */
+  }
+
+  /* 禁用输入框自动缩放 */
+  input:not([type='radio']):not([type='checkbox']) {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+}
+
+/* 平板及以上屏幕 */
+@media (min-width: 768px) {
+  body {
+    -webkit-user-select: auto;
+    user-select: auto;
+  }
+}
+
+/* 横屏优化 */
+@media (orientation: landscape) and (max-height: 500px) {
+  .top-menubar {
+    margin-bottom: 8px;
+  }
+}
+
+/* 阻止文本选中时的蓝色覆盖 */
+::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: inherit;
+}
+
+::-moz-selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: inherit;
+}

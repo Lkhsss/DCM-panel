@@ -202,24 +202,27 @@ onBeforeUnmount(() => {
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  min-width: 0;
 }
 
 .metrics-cards {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: stretch;
   flex-wrap: wrap;
 }
 
 .metrics-card {
-  flex: 1 1 180px;
-  min-width: 160px;
+  flex: 1 1 140px;
+  min-width: 120px;
 }
 
 .metrics-chart {
   margin-top: 16px;
   flex: 1 1 auto;
-  min-height: 240px;
+  min-height: 200px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .metric-value {
@@ -243,5 +246,21 @@ onBeforeUnmount(() => {
 .jump-leave-from {
   transform: translateY(0) scale(1);
   opacity: 1;
+}
+
+@media (max-width: 480px) {
+  .metrics-cards {
+    gap: 8px;
+  }
+
+  .metrics-card {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .metrics-chart {
+    min-height: 180px;
+    margin-top: 12px;
+  }
 }
 </style>

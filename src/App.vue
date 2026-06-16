@@ -4,7 +4,11 @@ import { RouterView } from 'vue-router'
 </script>
 
 <template>
-  <Toast position="top-right"/>
+  <Toast
+    position="top-right"
+    class="text-sm sm:text-base"
+    :pt="{ root: { class: 'max-w-[calc(100vw-2rem)] sm:max-w-sm' } }"
+  />
   <RouterView />
   <!-- <router-link to="/login">登录</router-link> -->
 </template>
@@ -16,7 +20,9 @@ body,
   min-height: 100%;
   background: var(--surface-ground);
   color: var(--text-color);
-  transition: background 0.3s, color 0.3s;
+  transition:
+    background 0.3s,
+    color 0.3s;
 }
 
 html.my-app-dark,
