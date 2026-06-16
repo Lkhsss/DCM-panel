@@ -1,11 +1,22 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { onBeforeMount, ref } from 'vue';
+import { getVersion } from '@/services/version'
+import Tag from 'primevue/tag';
+const version = ref("Unknown Version")
+
+onBeforeMount(async () => {
+    version.value = await getVersion()
+})
+</script>
 
 <template>
-    <div class="min-h-screen px-6 pt-10 pb-6 md:px-[100px] lg:px-[100px] flex flex-col items-center justify-center gap-6 backdrop-blur-3xl bg-white/30"
+    <div class="min-h-screen px-6 pt-10 pb-6 md:px-25 lg:px-25 flex flex-col items-center justify-center gap-6 backdrop-blur-3xl bg-white/30"
         style="background-image: linear-gradient(135deg, #f472b6 0%, #3b82f6 30%, #ffffff 100%);">
         <div class="w-full max-w-3xl border border-white/80 rounded-2xl bg-white/70 shadow-xl p-8 backdrop-blur"
             style="box-shadow: 0 20px 60px rgba(15, 23, 42, 0.2);">
-            <h1 class="text-2xl md:text-3xl font-semibold text-slate-900">DCM Panel</h1>
+            <h1 class="text-2xl md:text-3xl font-semibold text-slate-900">DCM Panel <Tag :value='version'
+                    severity="info"></Tag>
+            </h1>
             <p class="mt-4 text-slate-700 leading-relaxed">
                 这是一个面向 QQ 风纪委员的管理面板，用于集中查看与处理风纪事件、
                 账号状态与相关指标，帮助管理员高效完成审核与统计工作。

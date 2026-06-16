@@ -1,10 +1,21 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+
+import { onBeforeMount, ref } from 'vue';
+
+import { getVersion } from '@/services/version'
+
+const version = ref("Unknown Version")
+
+onBeforeMount(async () => {
+    version.value = await getVersion()
+})
+</script>
 
 <template>
     <section class="hello">
         <div class="glow" aria-hidden="true"></div>
         <div class="card">
-            <span class="badge">DCM Panel</span>
+            <span class="badge">DCM Panel {{ version }}</span>
             <h1>欢迎登录风纪面板</h1>
             <p>本面板作为QQ风纪委员的后端管理面板</p>
             <p>使用方法：将QQBot邀请加入群聊并赋予管理员权限即可使用。数据库全局共享，被封禁的用户永远无法进入被保护的群聊。</p>
